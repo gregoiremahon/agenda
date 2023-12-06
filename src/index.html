@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionnaire de Tâches</title>
+
+    <!-- FullCalendar CSS -->
+    <link href='https://unpkg.com/fullcalendar@5/main.min.css' rel='stylesheet' />
+
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.1.2/dist/tailwind.min.css" rel="stylesheet">
+
+    <!-- Google Fonts (Poppins) -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- styles.css -->
+    <link href="chemin/vers/votre/styles.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100">
+    <div id="app" class="container mx-auto mt-10">
+
+        <div class="bg-blue-500 text-white py-10 mb-6 flex flex-col lg:flex-row items-center justify-between relative">
+            <div class="text-center lg:text-left lg:ml-10">
+                <h1 class="text-5xl font-bold">
+                    Bienvenue sur le Gestionnaire de Tâches{{ utilisateurConnecte ? ' ' + nomUtilisateur : '' }} !
+                </h1>
+                <p class="text-xl mt-2">
+                    Organisez vos événements facilement{{ !utilisateurConnecte ? '. Vous devez d\'abord vous connecter ou créer un compte pour continuer' : '' }}.
+                </p>
+            </div>
+            <div class="flex flex-col space-y-2 lg:mr-10">
+                <button @click="showLoginModal = true" class="bg-white text-blue-500 hover:text-blue-700 font-bold py-2 px-4 rounded">
+                    Se connecter / Créer un compte
+                </button>
+                <button v-if="userConnected" @click="showEventForm = !showEventForm" class="bg-white text-blue-500 hover:text-blue-700 font-bold py-2 px-4 rounded">
+                    Ajouter Événement
+                </button>
+            </div>
+        </div>
+           
+
+        <!-- Formulaire d'ajout d'événement -->
+        <div v-if="userConnected && showEventForm" class="mb-6 p-6 bg-white shadow rounded">
+            <h2 class="text-lg font-semibold mb-4">Ajouter un Nouvel Événement</h2>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="titre">
+                    Titre
+                </label>
+                <input v-model="nouvelEvenement.titre" type="text" id="titre" placeholder="Titre de l'événement" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="description">
+                    Description
+                </label>
+                <textarea v-model="nouvelEvenement.description" id="description" placeholder="Détails de l'événement" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline h-32"></textarea>
+            </div>
+
+            <div class="flex gap-4 mb-4">
+                <div class="w-1/2">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="debut">
+                        Début
+                    </label>
+                    <input v-model="nouvelEvenement.debut" type="datetime-local" id="debut" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+
+                <div class="w-1/2">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="fin">
+                        Fin
+                    </label>
+                    <input v-model="nouvelEvenement.fin" type="datetime-local" id="fin" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+            </div>
+
+            <button @click="ajouterEvenement" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Ajouter Événement
+            </button>
+        </div>
+
+        <!-- Section de Connexion / Inscription -->
+        <!-- source : Tailwind CSS Login Form - Flowbite -->
+        <div v-if="showLoginModal === true" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+            <section class="bg-gray-50 dark:bg-gray-900" v-if="showLoginModal">
+                <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+                    <div class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+                        <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+                            <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+                                Connectez-vous à votre compte
+                            </h1>
+                            <form class="space-y-4 md:space-y-6" @submit.prevent="connecterUtilisateur">
+                                <div>
+                                    <label for="username" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nom d'utilisateur</label>
+                                    <input type="text" v-model="nomUtilisateur" id="username" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" required>
+                                </div>
+                                <div>
+                                    <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Mot de passe</label>
+                                    <input type="password" v-model="motDePasse" id="password" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" required>
+                                </div>
+                                <button type="submit" class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Se connecter</button>
+                                <p class="text-sm font-light text-gray-500">
+                                    Pas encore de compte ? <a href="#" @click="showAccountCreationModal = true" class="font-medium text-blue-600 hover:underline">Créer un compte</a>
+                                </p>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+              </section>                       
+        </div>
+        
+        <!-- Modal de création de compte -->
+
+        <div v-if="showAccountCreationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+            <section class="bg-gray-50 dark:bg-gray-900">
+                <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+                    <div class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+                        <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+                            <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+                                Créer un compte
+                            </h1>
+                            <form class="space-y-4 md:space-y-6" @submit.prevent="createUser">
+                                <div>
+                                    <label for="username" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nom d'utilisateur</label>
+                                    <input type="text" v-model="nouvelUtilisateur.nom" id="username" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" required>
+                                </div>
+                                <div>
+                                    <label for="new-password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Mot de passe</label>
+                                    <input type="password" v-model="nouvelUtilisateur.motDePasse" id="new-password" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" required>
+                                </div>
+                                <button type="submit" class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Créer le compte</button>
+                            </form>
+                            <p class="text-sm font-light text-gray-500">
+                                Vous avez déjà un compte ? <a href="#" @click="toggleModals" class="font-medium text-blue-600 hover:underline">Se connecter</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        
+
+        <!-- Si l'utilisateur n'est pas connecté, affiche un message lui indiquant que cette étape est nécessaire -->
+        <div v-if="userConnected === false" class="text-center py-10">
+            <p class="text-xl mb-4">Vous devez vous connecter ou créer un compte pour accéder à votre calendrier.</p>
+            <div class="bg-gray-200 p-10 rounded">
+                <p class="text-gray-600">Votre calendrier apparaîtra ici une fois connecté.</p>
+            </div>
+        </div>
+
+        <!-- Composant FullCalendar -->
+        <div v-if="userConnected === true" id="calendar"></div>
+
+        <div v-if="userConnected === true" v-for="evenement in evenements" :key="evenement.id" class="mb-4 p-4 bg-white rounded shadow">
+            <h2 class="text-xl">{{ evenement.titre }}</h2>
+            <p>{{ evenement.description }}</p>
+            <p>{{ evenement.debut }} - {{ evenement.fin }}</p>
+            <button @click="openUpdateEventModal(evenement)" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded mr-2">
+                Modifier
+            </button>            
+            <button @click="supprimerEvenement(evenement.id)" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                Supprimer
+            </button>
+        </div>
+        <!-- Modal pour la modification d'événement -->
+        <div v-if="evenementAmodifier && userConnected === true" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" id="my-modal" style="z-index: 1000;">
+            <!-- Contenu de la modal -->
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3 text-center">
+                    <div class="mt-2">
+                        <input v-model="evenementAmodifier.titre" type="text" placeholder="Titre" class="p-2 border border-gray-300 w-full">
+                        <textarea v-model="evenementAmodifier.description" placeholder="Description" class="p-2 border border-gray-300 w-full"></textarea>
+                        <input v-model="evenementAmodifier.debut" type="datetime-local" class="p-2 border border-gray-300 w-full">
+                        <input v-model="evenementAmodifier.fin" type="datetime-local" class="p-2 border border-gray-300 w-full">
+                    </div>
+                    <div class="items-center px-4 py-3">
+                        <button @click="modifierEvenement(evenementAmodifier)" class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300">
+                            Modifier l'événement
+                        </button>
+                    </div>
+                </div>
+            </div>  
+        </div>
+    </div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+
+<!-- FullCalendar JS & dependencies -->
+<script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.2/umd/popper.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<!-- Script App Vue.js -->
+<script src="app.js"></script>
+</html>
